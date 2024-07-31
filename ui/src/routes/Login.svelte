@@ -8,6 +8,7 @@
   import { navigate } from "svelte-routing";
   import Title from "../components/Title.svelte";
   import { t } from "../lib/i18n";
+  import { SafeArea } from "capacitor-plugin-safe-area";
 
   const { name, logo, logo_size } = customize;
 
@@ -22,11 +23,24 @@
   let isFormSubmitted = false;
   let loginError = false;
 
+
+
   $: isUsernameValid = username.length >= 3 && !/\s/.test(username);
-  $: isPasswordValid = password.length >= 8;
+  $: isPasswordValid = password.length >= 1;
 
   onMount(() => {
     isMounted = true;
+
+    (async () => {
+    const windowHeight = window.innerHeight;
+    const safeAreaData = await SafeArea.getSafeAreaInsets();
+    const { insets } = safeAreaData;
+
+    const insetHeights = insets.top + insets.bottom;
+    const login = document.querySelector("#login");
+    const calc = `calc(${windowHeight}px - ${insetHeights}px)`;
+    login.style.setProperty("height", calc);
+  })();
   });
 
   function submitForm() {
@@ -38,7 +52,7 @@
     if (isUsernameValid && isPasswordValid) {
       isLoading = true;
       try {
-        await pb.collection("users").authWithPassword(username, password);
+        await pb.collection("users").authWithPassword(username.toLowerCase(), password);
         navigate("/");
       } catch (err) {
         loginError = true;
@@ -50,7 +64,7 @@
 
 <Title suffix="Login" />
 
-<main class="flex h-dvh flex-col items-center justify-between px-5 py-10">
+<main id="login" class="flex flex-col items-center justify-between px-5">
   <img
     aria-hidden="true"
     on:click={() => navigate("/")}

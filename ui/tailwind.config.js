@@ -1,5 +1,6 @@
 import customize from "./customize.json";
 import typography from "@tailwindcss/typography";
+import safeArea from "tailwindcss-safe-area-capacitor";
 
 const { colors } = customize;
 
@@ -38,5 +39,5 @@ export default {
       },
     },
   },
-  plugins: [typography],
+  plugins: [typography, safeArea],
 };

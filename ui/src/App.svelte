@@ -8,16 +8,36 @@
   import Search from "./components/Search.svelte";
   import Alert from "./components/Alert.svelte";
   import { t, locale, locales } from "./lib/i18n";
+  import { SafeArea } from "capacitor-plugin-safe-area";
+
+  (async () => {
+    const windowHeight = window.innerHeight;
+    const safeAreaData = await SafeArea.getSafeAreaInsets();
+    const { insets } = safeAreaData;
+
+    for (const [key, value] of Object.entries(insets)) {
+      document.documentElement.style.setProperty(
+        `--safe-area-inset-${key}`,
+        `${value}px`,
+      );
+    }
+  })();
 </script>
 
-{#if $currentUser}
-  <Search />
-  <Alert />
-{/if}
+<header class="sticky h-[var(--safe-area-inset-top)] top-0 z-50 w-full bg-dark"></header>
 
-<Router>
-  <Route path="/" component={MyCourses} />
-  <Route path="/login" component={Login} />
-  <Route path="/:lessonTitle" component={Lesson} />
-  <Route component={NotFound} />
-</Router>
+<div class="w-full z-0">
+  {#if $currentUser}
+    <Search />
+    <Alert />
+  {/if}
+
+  <Router>
+    <Route path="/" component={MyCourses} />
+    <Route path="/login" component={Login} />
+    <Route path="/:lessonTitle" component={Lesson} />
+    <Route component={NotFound} />
+  </Router>
+</div>
+
+<footer class="sticky h-[var(--safe-area-inset-bottom)] bottom-0 z-50 w-full bg-dark"></footer>

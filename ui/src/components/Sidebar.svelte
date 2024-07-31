@@ -10,6 +10,7 @@
   import { pb, courses, resources, currentUser } from "../lib/pocketbase";
   import { navigate, useLocation } from "svelte-routing";
   import { t } from "../lib/i18n";
+  import { SafeArea } from "capacitor-plugin-safe-area";
 
   export let isCoursesVisible = true;
 
@@ -20,6 +21,18 @@
 
   $: if ($location.pathname && window.innerWidth <= 1024) {
     isSidebarVisible.set(false);
+  }
+  $: if ($isSidebarVisible) {
+    (async () => {
+      const windowHeight = window.innerHeight;
+      const safeAreaData = await SafeArea.getSafeAreaInsets();
+      const { insets } = safeAreaData;
+
+      const insetHeights = insets.top + insets.bottom;
+      const aside = document.querySelector("#sidebar");
+      const calc = `calc(${windowHeight}px - ${insetHeights}px)`;
+      aside.style.setProperty("height", calc);
+    })();
   }
 
   function logout() {
@@ -35,7 +48,8 @@
       easing: quintOut,
       axis: "x",
     }}
-    class="flex h-full w-80 flex-none flex-col gap-5 border-r-[1.5px] border-r-white/5 bg-white/5 p-5 lg:w-full lg:border-none"
+    class="flex w-80 flex-none flex-col gap-5 border-r-[1.5px] border-r-white/5 bg-white/5 p-5 lg:w-full lg:border-none"
+    id="sidebar"
   >
     <div class="flex items-center justify-between">
       <img

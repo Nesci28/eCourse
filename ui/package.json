@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@iconify/svelte": "^3.1.6",
     "@sveltejs/vite-plugin-svelte": "^3.0.1",
     "@tailwindcss/typography": "^0.5.10",
@@ -25,9 +26,19 @@
     "vite": "^5.0.11"
   },
   "dependencies": {
+    "@capacitor/android": "^6.1.1",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/cli": "^6.1.1",
+    "@capacitor/core": "^6.1.1",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/ios": "^6.1.1",
+    "@capacitor/keyboard": "^6.0.1",
+    "@capacitor/status-bar": "^6.0.0",
+    "capacitor-plugin-safe-area": "^3.0.3",
     "plyr": "^3.7.8",
     "pocketbase": "^0.21.1",
     "slugify": "^1.6.6",
-    "svelte-i18n": "^4.0.0"
+    "svelte-i18n": "^4.0.0",
+    "tailwindcss-safe-area-capacitor": "^0.5.1"
   }
 }

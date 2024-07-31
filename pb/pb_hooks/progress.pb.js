@@ -2,6 +2,7 @@
 onRecordAfterCreateRequest((e) => {
   const record = e.record;
   const progressCollection = $app.dao().findCollectionByNameOrId("progress");
+  const courseProgressionCollection = $app.dao().findCollectionByNameOrId("course_progressions");
   const usersCollection = $app.dao().findCollectionByNameOrId("users");
   const assign_to_everyone = record.getBool("assign_to_everyone");
   let assignees = record.getStringSlice("assignees");
@@ -20,7 +21,16 @@ onRecordAfterCreateRequest((e) => {
       status: "Not Started",
     });
     $app.dao().saveRecord(progressRecord);
+
+    const courseProgressionRecord = new Record(courseProgressionCollection, {
+      course: record.id,
+      assignee,
+      title: "",
+    });
+    $app.dao().saveRecord(courseProgressionRecord);
   });
+
+
 }, "courses");
 
 // create/delete progress records for every assignee added/removed when a course record is updated
@@ -30,6 +40,7 @@ onRecordAfterUpdateRequest((e) => {
   const originalAssignees = originalRecord.getStringSlice("assignees");
   let updatedAssignees = updatedRecord.getStringSlice("assignees");
   const progressCollection = $app.dao().findCollectionByNameOrId("progress");
+  const courseProgressionsCollection = $app.dao().findCollectionByNameOrId("course_progressions");
   const usersCollection = $app.dao().findCollectionByNameOrId("users");
   const assign_to_everyone = updatedRecord.getBool("assign_to_everyone");
 
@@ -53,8 +64,14 @@ onRecordAfterUpdateRequest((e) => {
       assignee: assignee,
       status: "Not Started",
     });
-
     $app.dao().saveRecord(progressRecord);
+
+    const courseProgressionRecord = new Record(courseProgressionsCollection, {
+      course: updatedRecord.id,
+      assignee: assignee,
+      title: "",
+    });
+    $app.dao().saveRecord(courseProgressionRecord);
   });
 
   removedAssignees.forEach((assignee) => {
@@ -64,9 +81,18 @@ onRecordAfterUpdateRequest((e) => {
         progressCollection.name,
         $dbx.hashExp({ assignee: `${assignee}`, course: `${updatedRecord.id}` })
       );
-
     progressRecords.forEach((progressRecord) => {
       $app.dao().deleteRecord(progressRecord);
+    });
+
+    const courseProgressionRecords = $app
+    .dao()
+    .findRecordsByExpr(
+      courseProgressionsCollection.name,
+      $dbx.hashExp({ assignee: `${assignee}`, course: `${updatedRecord.id}` })
+    );
+    courseProgressionRecords.forEach((courseProgression) => {
+      $app.dao().deleteRecord(courseProgression);
     });
   });
 }, "courses");
@@ -135,6 +161,7 @@ onRecordAfterCreateRequest((e) => {
 onRecordAfterCreateRequest((e) => {
   const newUser = e.record;
   const progressCollection = $app.dao().findCollectionByNameOrId("progress");
+  const courseProgressionsCollection = $app.dao().findCollectionByNameOrId("course_progressions");
   const coursesCollection = $app.dao().findCollectionByNameOrId("courses");
 
   const assignedToEveryoneCourses = $app
@@ -156,8 +183,14 @@ onRecordAfterCreateRequest((e) => {
         assignee: newUser.id,
         status: "Not Started",
       });
-
       $app.dao().saveRecord(progressRecord);
+
+      const courseProgressionRecord = new Record(courseProgressionsCollection, {
+        course: course.id,
+        assignee: newUser.id,
+        title: "",
+      });
+      $app.dao().saveRecord(courseProgressionRecord);
     }
   });
 }, "users");

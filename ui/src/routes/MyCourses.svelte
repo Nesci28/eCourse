@@ -1,14 +1,18 @@
 <script>
   import { onMount } from "svelte";
   import { currentUser, fetchRecords } from "../lib/pocketbase";
-  import { isLoading } from "../lib/store";
+  import { isLoading, isSidebarVisible } from "../lib/store";
   import Sidebar from "../components/Sidebar.svelte";
   import Courses from "../components/Courses.svelte";
   import { navigate } from "svelte-routing";
   import Title from "../components/Title.svelte";
   import { t } from "../lib/i18n";
+  import { Capacitor } from "@capacitor/core";
+
+  let platform = "";
 
   onMount(async () => {
+    platform = Capacitor.getPlatform();
     if ($currentUser) {
       $isLoading = true;
       await fetchRecords();
@@ -22,8 +26,14 @@
 <Title suffix={$t("myCourses")} />
 
 {#if $currentUser}
-  <main class="flex h-dvh justify-between lg:overflow-x-hidden">
+  <main class="flex justify-between lg:overflow-x-hidden">
     <Sidebar />
-    <Courses />
+
+    {#if platform === "web"}
+      <Courses />
+    {:else if !$isSidebarVisible}
+      <Courses />
+    {/if}
+
   </main>
 {/if}

@@ -4,6 +4,8 @@
     courses,
     progress,
     updateProgressStatus,
+    course_progressions,
+    updateCourseProgression,
   } from "../lib/pocketbase";
   import Icon from "@iconify/svelte";
   import slugify from "slugify";
@@ -72,22 +74,39 @@
       }
     }
 
-    const lessonsByCourse = getStoredLessons();
-    const currentLesson = lessonsByCourse[courseId];
+    const courseProgressions = $course_progressions;
+    const currentCourseProgression = courseProgressions.find((x) => {
+      return x.course === courseId;
+    });
 
-    if (currentLesson) {
-      navigate(
-        `/${slugify(currentLesson.title, { lower: true, strict: true })}`,
-      );
-    } else {
-      const firstLesson = $lessons.find((lesson) => lesson.course === courseId);
-      if (firstLesson) {
+    if (currentCourseProgression) {
+      if (currentCourseProgression.title && currentCourseProgression.title !== '""') {
         navigate(
-          `/${slugify(firstLesson.title, { lower: true, strict: true })}`,
+          `/${slugify(currentCourseProgression.title, { lower: true, strict: true })}`,
         );
+      } else {
+        const firstLesson = $lessons.find(
+          (lesson) => lesson.course === courseId,
+        );
+        if (firstLesson) {
+          navigate(
+            `/${slugify(firstLesson.title, { lower: true, strict: true })}`,
+          );
 
-        lessonsByCourse[courseId] = firstLesson;
-        storeLessons(lessonsByCourse);
+          const updatedCourseProgressionRecord = await updateCourseProgression(
+            currentCourseProgression.id,
+            firstLesson.title,
+          );
+          if (updatedCourseProgressionRecord) {
+            await tick();
+            $course_progressions = $course_progressions.map((x) => {
+              if (x.course === courseId) {
+                return { ...x, title: firstLesson.title };
+              }
+              return x;
+            });
+          }
+        }
       }
     }
   }
@@ -126,10 +145,23 @@
         enableReactivity = false;
         loading[courseId] = false;
         isOpen[courseId] = false;
+      }
 
-        const lessonsByCourse = getStoredLessons();
-        delete lessonsByCourse[courseId];
-        storeLessons(lessonsByCourse);
+      const courseProgressionRecord = $course_progressions.find(
+          (x) => x.course === courseId,
+        );
+      const updatedCourseProgressionRecord = await updateCourseProgression(
+        courseProgressionRecord.id,
+        '""',
+      );
+      if (updatedCourseProgressionRecord) {
+        await tick();
+        $course_progressions = $course_progressions.map((x) => {
+          if (x.course === courseId) {
+            return { ...x, title: '""' };
+          }
+          return x;
+        });
       }
     }
   }

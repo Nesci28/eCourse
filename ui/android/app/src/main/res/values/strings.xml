@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ecourse</string>
+    <string name="title_activity_main">ecourse</string>
+    <string name="package_name">nos.ecourse.com</string>
+    <string name="custom_url_scheme">nos.ecourse.com</string>
+</resources>

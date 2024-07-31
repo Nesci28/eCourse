@@ -7,7 +7,7 @@ export default {
     usernameNotValid:
       "Username must be 3+ characters and cannot contain spaces",
     password: "Password",
-    passwordNotValid: "Password must be 8+ characters",
+    passwordNotValid: "Password must have a value",
     login: "Login",
     loggingIn: "Logging in...",
     alreadyLogin: "Logged in already?",
