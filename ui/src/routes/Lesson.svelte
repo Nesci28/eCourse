@@ -32,6 +32,7 @@
   import Title from "../components/Title.svelte";
   import { t } from "../lib/i18n";
   import { SafeArea } from "capacitor-plugin-safe-area";
+  import { Capacitor } from "@capacitor/core";
 
   export let lessonTitle;
 
@@ -39,10 +40,12 @@
   let lessonVideo;
   let currentCourseStatus = "";
   let currentLessonTitle = "";
+  let platform = "";
 
   const lessonLocation = useLocation();
 
   onMount(async () => {
+    platform = Capacitor.getPlatform();
     if ($currentUser) {
       $isLoading = true;
       await fetchRecords();
@@ -242,7 +245,7 @@
   <main class="flex justify-between lg:overflow-x-hidden">
     <Sidebar isCoursesVisible={false} />
 
-    {#if !$isSidebarVisible}
+    {#if platform === 'web' || (!$isSidebarVisible && platform !== 'web')}
       {#if $isLoading}
         <div class="flex w-full flex-col gap-5 p-5">
           <div class="flex items-center gap-3">
