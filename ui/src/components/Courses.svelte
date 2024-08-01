@@ -90,22 +90,8 @@
         );
         if (firstLesson) {
           navigate(
-            `/${slugify(firstLesson.title, { lower: true, strict: true })}`,
+            `/${slugify(firstLesson.id, { lower: true, strict: true })}`,
           );
-
-          const updatedCourseProgressionRecord = await updateCourseProgression(
-            currentCourseProgression.id,
-            firstLesson.title,
-          );
-          if (updatedCourseProgressionRecord) {
-            await tick();
-            $course_progressions = $course_progressions.map((x) => {
-              if (x.course === courseId) {
-                return { ...x, title: firstLesson.title };
-              }
-              return x;
-            });
-          }
         }
       }
     }
@@ -339,7 +325,7 @@
                 <button
                   on:click={() =>
                     navigate(
-                      `/${slugify(lesson.title, { lower: true, strict: true })}`,
+                      `/${slugify(lesson.id, { lower: true, strict: true })}`,
                     )}
                   class="flex items-center gap-2 p-2 text-white/50 transition hover:text-white"
                 >

@@ -35,7 +35,7 @@
   <Router>
     <Route path="/" component={MyCourses} />
     <Route path="/login" component={Login} />
-    <Route path="/:lessonTitle" component={Lesson} />
+    <Route path="/:lessonId" component={Lesson} />
     <Route component={NotFound} />
   </Router>
 </div>

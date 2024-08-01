@@ -94,7 +94,7 @@
               <button
                 on:click={() => {
                   navigate(
-                    `/${slugify(lesson.title, { lower: true, strict: true })}`,
+                    `/${slugify(lesson.id, { lower: true, strict: true })}`,
                   );
                   isSearchVisible.set(false);
                 }}

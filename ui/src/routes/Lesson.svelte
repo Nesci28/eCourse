@@ -34,7 +34,7 @@
   import { SafeArea } from "capacitor-plugin-safe-area";
   import { Capacitor } from "@capacitor/core";
 
-  export let lessonTitle;
+  export let lessonId;
 
   let loading = {};
   let lessonVideo;
@@ -46,6 +46,7 @@
 
   onMount(async () => {
     platform = Capacitor.getPlatform();
+
     if ($currentUser) {
       $isLoading = true;
       await fetchRecords();
@@ -67,8 +68,11 @@
         enabled: true,
         fallback: true,
         iosNative: true,
-        container: '#container',
+        container: "#container",
       },
+    });
+    lessonVideo.on("play", async () => {
+      await onPlayUpdateCourseProgression();
     });
   });
 
@@ -76,8 +80,8 @@
   $: {
     const currentLesson = $lessons.find(
       (lesson) =>
-        slugify(lesson.title, { lower: true, strict: true }) ===
-        slugify(lessonTitle, { lower: true, strict: true }),
+        slugify(lesson.id, { lower: true, strict: true }) ===
+        slugify(lessonId, { lower: true, strict: true }),
     );
     if (currentLesson) {
       currentLessonTitle = currentLesson.title;
@@ -95,6 +99,32 @@
     }
   }
 
+  async function onPlayUpdateCourseProgression() {
+    const currentLesson = getCurrentLesson();
+    if (!currentLesson) {
+      return;
+    }
+
+    const courseProgressions = $course_progressions;
+    const currentCourseProgression = courseProgressions.find((x) => {
+      return x.course === currentLesson.course;
+    });
+
+    const updatedCourseProgressionRecord = await updateCourseProgression(
+      currentCourseProgression.id,
+      currentLesson.id,
+    );
+    if (updatedCourseProgressionRecord) {
+      await tick();
+      $course_progressions = $course_progressions.map((x) => {
+        if (x.course === currentLesson.course) {
+          return { ...x, title: currentLesson.id };
+        }
+        return x;
+      });
+    }
+  }
+
   // function to get lessons of the current course
   function getCourseLessons(courseId) {
     return $lessons.filter((lesson) => lesson.course === courseId);
@@ -104,99 +134,65 @@
   function findCurrentLessonIndex(courseLessons) {
     return courseLessons.findIndex(
       (lesson) =>
-        slugify(lesson.title, { lower: true, strict: true }) ===
-        slugify(lessonTitle, { lower: true, strict: true }),
+        slugify(lesson.id, { lower: true, strict: true }) ===
+        slugify(lessonId, { lower: true, strict: true }),
     );
   }
 
   // function to navigate to the next lesson within the same course
   async function goToNextLesson() {
-    const currentLesson = $lessons.find(
-      (lesson) =>
-        slugify(lesson.title, { lower: true, strict: true }) ===
-        slugify(lessonTitle, { lower: true, strict: true }),
-    );
+    const currentLessonIndex = getCurrentLessonIndex();
+    if (currentLessonIndex === undefined || currentLessonIndex < 0) {
+      return;
+    }
 
-    if (currentLesson) {
-      const courseLessons = getCourseLessons(currentLesson.course);
-      const currentLessonIndex = findCurrentLessonIndex(courseLessons);
-      if (
-        currentLessonIndex >= 0 &&
-        currentLessonIndex < courseLessons.length - 1
-      ) {
-        const nextLesson = courseLessons[currentLessonIndex + 1];
-        const courseId = nextLesson.course;
-        navigate(
-          `/${slugify(nextLesson.title, { lower: true, strict: true })}`,
-        );
-
-        const courseProgressions = $course_progressions;
-        const currentCourseProgression = courseProgressions.find((x) => {
-          return x.course === courseId;
-        });
-
-        const updatedCourseProgressionRecord = await updateCourseProgression(
-          currentCourseProgression.id,
-          nextLesson.title,
-        );
-        if (updatedCourseProgressionRecord) {
-          await tick();
-          $course_progressions = $course_progressions.map((x) => {
-            if (x.course === courseId) {
-              return { ...x, title: nextLesson.title };
-            }
-            return x;
-          });
-        }
-      }
+    const currentLesson = getCurrentLesson();
+    const courseLessons = getCourseLessons(currentLesson.course);
+    if (currentLessonIndex < courseLessons.length - 1) {
+      const nextLesson = courseLessons[currentLessonIndex + 1];
+      navigate(`/${slugify(nextLesson.id, { lower: true, strict: true })}`);
     }
   }
 
   // function to navigate to the previous lesson within the same course
   async function goToPreviousLesson() {
+    const currentLessonIndex = getCurrentLessonIndex();
+    if (currentLessonIndex === undefined || currentLessonIndex < 0) {
+      return;
+    }
+
+    const currentLesson = getCurrentLesson();
+    const courseLessons = getCourseLessons(currentLesson.course);
+    const previousLesson = courseLessons[currentLessonIndex - 1];
+    navigate(`/${slugify(previousLesson.id, { lower: true, strict: true })}`);
+  }
+
+  function getCurrentLessonIndex() {
+    const currentLesson = getCurrentLesson();
+    if (!currentLesson) {
+      return;
+    }
+
+    const courseLessons = getCourseLessons(currentLesson.course);
+    const currentLessonIndex = findCurrentLessonIndex(courseLessons);
+    return currentLessonIndex;
+  }
+
+  function getCurrentLesson() {
     const currentLesson = $lessons.find(
       (lesson) =>
-        slugify(lesson.title, { lower: true, strict: true }) ===
-        slugify(lessonTitle, { lower: true, strict: true }),
+        slugify(lesson.id, { lower: true, strict: true }) ===
+        slugify(lessonId, { lower: true, strict: true }),
     );
-    if (currentLesson) {
-      const courseLessons = getCourseLessons(currentLesson.course);
-      const currentLessonIndex = findCurrentLessonIndex(courseLessons);
-      if (currentLessonIndex > 0) {
-        const previousLesson = courseLessons[currentLessonIndex - 1];
-        const courseId = previousLesson.course;
-        navigate(
-          `/${slugify(previousLesson.title, { lower: true, strict: true })}`,
-        );
-
-        const courseProgressions = $course_progressions;
-        const currentCourseProgression = courseProgressions.find((x) => {
-          return x.course === courseId;
-        });
-
-        const updatedCourseProgressionRecord = await updateCourseProgression(
-          currentCourseProgression.id,
-          previousLesson.title,
-        );
-        if (updatedCourseProgressionRecord) {
-          await tick();
-          $course_progressions = $course_progressions.map((x) => {
-            if (x.course === courseId) {
-              return { ...x, title: previousLesson.title };
-            }
-            return x;
-          });
-        }
-      }
-    }
+    return currentLesson;
   }
 
   // function to complete a course and update the progress status to "Completed"
   async function completeCourse(lessonId) {
     const currentLesson = $lessons.find(
       (lesson) =>
-        slugify(lesson.title, { lower: true, strict: true }) ===
-        slugify(lessonTitle, { lower: true, strict: true }),
+        slugify(lesson.id, { lower: true, strict: true }) ===
+        slugify(lessonId, { lower: true, strict: true }),
     );
     const currentCourse = $courses.find(
       (course) => course.id === currentLesson.course,
@@ -245,7 +241,7 @@
   <main class="flex justify-between lg:overflow-x-hidden">
     <Sidebar isCoursesVisible={false} />
 
-    {#if platform === 'web' || (!$isSidebarVisible && platform !== 'web')}
+    {#if platform === "web" || (!$isSidebarVisible && platform !== "web")}
       {#if $isLoading}
         <div class="flex w-full flex-col gap-5 p-5">
           <div class="flex items-center gap-3">
@@ -269,14 +265,15 @@
             />
           </div>
         </div>
-      {:else if $lessons.length === 0 || $lessons.every((lesson) => slugify( lesson.title, { lower: true, strict: true }, ) !== $lessonLocation.pathname.slice(1))}
+      {:else if $lessons.length === 0 || $lessons.every((lesson) => slugify( lesson.id, { lower: true, strict: true }, ) !== $lessonLocation.pathname.slice(1))}
         <NotFound page="lesson" />
       {:else}
         {#each $lessons as lesson (lesson.id)}
-          {#if slugify( lesson.title, { lower: true, strict: true }, ) === slugify( lessonTitle, { lower: true, strict: true }, )}
+          {#if slugify( lesson.id, { lower: true, strict: true }, ) === slugify( lessonId, { lower: true, strict: true }, )}
             <section
-              class={$lesson_faqs.filter((faq) => faq.lesson.includes(lesson.id))
-                .length > 0 ||
+              class={$lesson_faqs.filter((faq) =>
+                faq.lesson.includes(lesson.id),
+              ).length > 0 ||
               $lesson_resources.filter((resource) =>
                 resource.lesson.includes(lesson.id),
               ).length > 0 ||
@@ -312,7 +309,7 @@
 
                   {#if currentCourseStatus === "In Progress" || currentCourseStatus === "Completed"}
                     <div class="flex items-center gap-3 sm:w-full sm:flex-col">
-                      {#if !findCurrentLessonIndex(getCourseLessons($lessons.find((lesson) => slugify( lesson.title, { lower: true, strict: true }, ) === slugify( lessonTitle, { lower: true, strict: true }, )).course)) <= 0}
+                      {#if !findCurrentLessonIndex(getCourseLessons($lessons.find((lesson) => slugify( lesson.id, { lower: true, strict: true }, ) === slugify( lessonId, { lower: true, strict: true }, )).course)) <= 0}
                         <button
                           on:click={goToPreviousLesson}
                           class="line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md bg-white/10 px-4 py-2 outline outline-[1.5px] outline-white/20 transition hover:bg-white/20 sm:order-last sm:w-full"
@@ -322,7 +319,7 @@
                         </button>
                       {/if}
 
-                      {#if findCurrentLessonIndex(getCourseLessons($lessons.find((lesson) => slugify( lesson.title, { lower: true, strict: true }, ) === slugify( lessonTitle, { lower: true, strict: true }, )).course)) >= getCourseLessons($lessons.find((lesson) => slugify( lesson.title, { lower: true, strict: true }, ) === slugify( lessonTitle, { lower: true, strict: true }, )).course).length - 1}
+                      {#if findCurrentLessonIndex(getCourseLessons($lessons.find((lesson) => slugify( lesson.id, { lower: true, strict: true }, ) === slugify( lessonId, { lower: true, strict: true }, )).course)) >= getCourseLessons($lessons.find((lesson) => slugify( lesson.id, { lower: true, strict: true }, ) === slugify( lessonId, { lower: true, strict: true }, )).course).length - 1}
                         <button
                           on:click={() => completeCourse(lesson.id)}
                           class={loading[lesson.id] ||
@@ -484,8 +481,13 @@
                         class="block w-full rounded-md bg-white/10 p-2 outline outline-[1.5px] outline-white/20 transition hover:bg-white/20"
                       >
                         <div class="flex items-center justify-between gap-2">
-                          <h3 class="line-clamp-1">{cleanFileName(download)}</h3>
-                          <Icon class="flex-shrink-0" icon="ph:download-simple" />
+                          <h3 class="line-clamp-1">
+                            {cleanFileName(download)}
+                          </h3>
+                          <Icon
+                            class="flex-shrink-0"
+                            icon="ph:download-simple"
+                          />
                         </div>
                       </a>
                     {/each}
@@ -497,6 +499,5 @@
         {/each}
       {/if}
     {/if}
-
   </main>
 {/if}
