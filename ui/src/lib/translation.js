@@ -24,6 +24,7 @@ export default {
     continueCourse: "Continue Course",
     openCourse: "Open Course",
     resetProgress: "Reset Progress",
+    showCertificate: "Get certificate",
     lessonInThisCourse: "Lesson in this Course",
     lessonsInThisCourse: "Lessons in this Course",
     completed: "Completed",
@@ -67,6 +68,7 @@ export default {
     continueCourse: "Continuer le cours",
     openCourse: "Cours commencé",
     resetProgress: "Réinitialiser l'avancement",
+    showCertificate: "Avoir le certificat",
     lessonsInThisCourse: "Leçons dans ce cours",
     lessonInThisCourse: "Leçon dans ce cours",
     completed: "Terminé",
@@ -129,9 +131,11 @@ export default {
   ro: {
     welcomeTo: "Bine ai venit la",
     pleaseLogin: "Conectează-te la contul tău",
-    loginFailed: "Conectare eșuată. Verifică-ți credențialele și încearcă din nou",
+    loginFailed:
+      "Conectare eșuată. Verifică-ți credențialele și încearcă din nou",
     username: "Nume de utilizator / email",
-    usernameNotValid: "Numele de utilizator trebuie să aibă cel puțin 3 caractere și nu poate conține spații",
+    usernameNotValid:
+      "Numele de utilizator trebuie să aibă cel puțin 3 caractere și nu poate conține spații",
     password: "Parolă",
     passwordNotValid: "Parola trebuie să aibă cel puțin 8 caractere",
     login: "Conectare",
@@ -143,7 +147,8 @@ export default {
     summary: "Rezumat",
     downloads: "Descărcări",
     noCourseAssigned: "Niciun curs nu ți-a fost asignat!",
-    courseAssignedCheck: "Cursurile asignate ție vor fi afișate aici, verifică această pagină din când în când pentru a te asigura că nu pierzi niciun curs.",
+    courseAssignedCheck:
+      "Cursurile asignate ție vor fi afișate aici, verifică această pagină din când în când pentru a te asigura că nu pierzi niciun curs.",
     view: "Vezi",
     startCourse: "Începe cursul",
     continueCourse: "Continuă cursul",
@@ -164,6 +169,6 @@ export default {
     courseCompleted: "Curs finalizat",
     previousLesson: "Lecția anterioară",
     resources: "Resurse",
-    notStarted: "Neînceput"
+    notStarted: "Neînceput",
   },
 };

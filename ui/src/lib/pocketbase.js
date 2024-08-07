@@ -3,15 +3,17 @@ import { writable } from "svelte/store";
 import { showAlert } from "./store";
 
 const getUrl = () => {
-  return import.meta.env.DEV ? import.meta.env.VITE_DEV_PB_URL : import.meta.env.VITE_PROD_PB_URL;
-}
+  return import.meta.env.DEV
+    ? import.meta.env.VITE_DEV_PB_URL
+    : import.meta.env.VITE_PROD_PB_URL;
+};
 
-const url = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : getUrl();
-console.log('url :>> ', url);
+const url = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL
+  : getUrl();
+console.log("url :>> ", url);
 
-export const pb = new PocketBase(
-  url
-);
+export const pb = new PocketBase(url);
 
 export const currentUser = writable(pb.authStore.model);
 export const courses = writable([]);
@@ -21,6 +23,7 @@ export const resources = writable([]);
 export const lesson_faqs = writable([]);
 export const lesson_resources = writable([]);
 export const course_progressions = writable([]);
+export const course_certificates = writable([]);
 
 pb.authStore.onChange(() => {
   currentUser.set(pb.authStore.model);
@@ -49,9 +52,17 @@ export const fetchRecords = async () => {
       sort: "created",
     });
 
-    const courseProgressionRecords = await pb.collection("course_progressions").getFullList({
-      sort: "created",
-    });
+    const courseProgressionRecords = await pb
+      .collection("course_progressions")
+      .getFullList({
+        sort: "created",
+      });
+
+    const courseCertificateRecords = await pb
+      .collection("course_certificates")
+      .getFullList({
+        sort: "created",
+      });
 
     const lessonResourcesRecords = await pb
       .collection("lesson_resources")
@@ -66,6 +77,7 @@ export const fetchRecords = async () => {
     lesson_faqs.set(lessonFaqsRecords);
     lesson_resources.set(lessonResourcesRecords);
     course_progressions.set(courseProgressionRecords);
+    course_certificates.set(courseCertificateRecords);
   } catch (error) {
     showAlert("Failed to load data. Please try again", "fail");
   }
@@ -87,7 +99,10 @@ export const updateProgressStatus = async (progressRecordId, newStatus) => {
 };
 
 // function to update the lesson progression for a user
-export const updateCourseProgression = async (courseProgressionId, lessonTitle) => {
+export const updateCourseProgression = async (
+  courseProgressionId,
+  lessonTitle,
+) => {
   try {
     const data = {
       title: lessonTitle,
@@ -99,4 +114,4 @@ export const updateCourseProgression = async (courseProgressionId, lessonTitle) 
   } catch (error) {
     showAlert("Failed to update course progression. Please try again", "fail");
   }
-}
+};

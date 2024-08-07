@@ -6,6 +6,7 @@
     updateProgressStatus,
     course_progressions,
     updateCourseProgression,
+    course_certificates,
   } from "../lib/pocketbase";
   import Icon from "@iconify/svelte";
   import slugify from "slugify";
@@ -80,7 +81,10 @@
     });
 
     if (currentCourseProgression) {
-      if (currentCourseProgression.title && currentCourseProgression.title !== '""') {
+      if (
+        currentCourseProgression.title &&
+        currentCourseProgression.title !== '""'
+      ) {
         navigate(
           `/${slugify(currentCourseProgression.title, { lower: true, strict: true })}`,
         );
@@ -134,8 +138,8 @@
       }
 
       const courseProgressionRecord = $course_progressions.find(
-          (x) => x.course === courseId,
-        );
+        (x) => x.course === courseId,
+      );
       const updatedCourseProgressionRecord = await updateCourseProgression(
         courseProgressionRecord.id,
         '""',
@@ -150,6 +154,27 @@
         });
       }
     }
+  }
+
+  function sumTime(times) {
+    let sumSeconds = 0;
+
+    times.forEach((time) => {
+      let a = time.split(":");
+      let seconds = +a[0] * 60 * 60 + +a[1] * 60 + +a[2];
+      sumSeconds += seconds;
+    });
+
+    return new Date(sumSeconds * 1000).toISOString().substr(11, 8);
+  }
+
+  async function handleShowCertificate(courseId) {
+    const courseCertificate = $course_certificates.find((x) => {
+      return x.course === courseId;
+    });
+    const { id, certificate } = courseCertificate;
+    const url = `${import.meta.env.VITE_API_URL}/api/files/course_certificates/${id}/${certificate}`;
+    window.open(url, "_blank").focus();
   }
 </script>
 
@@ -259,6 +284,18 @@
                   </h3>
                 </div>
                 <div class="flex items-center gap-3 sm:w-full">
+                  {#each $course_certificates as courseCertificates (courseCertificates.id)}
+                    {#if courseCertificates.course === course.id && courseCertificates.certificate}
+                      <button
+                        on:click|stopPropagation
+                        on:click={() => handleShowCertificate(course.id)}
+                        class={loading[course.id]
+                          ? "pointer-events-none line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md px-4 py-2 text-red-400 opacity-50 outline outline-[1.5px] outline-red-400/20 transition hover:bg-red-400/20 sm:w-full sm:flex-1 sm:px-0"
+                          : "line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md bg-emerald-400/10 px-4 py-2 text-emerald-400/70 outline outline-[1.5px] outline-emerald-400/20 transition hover:bg-emerald-400/20 sm:w-full sm:flex-1 sm:px-0"}
+                        >{$t("showCertificate")}
+                      </button>
+                    {/if}
+                  {/each}
                   {#if progressRecord.status === "Completed" || progressRecord.status === "In Progress"}
                     <button
                       on:click|stopPropagation
@@ -290,7 +327,27 @@
             {/if}
           {/each}
           <div class="w-full space-y-2">
-            <h1 class="text-base leading-relaxed">{course.title}</h1>
+            <h1 class="text-base leading-relaxed">
+              {course.title}
+            </h1>
+            <p class="text-sm text-slate-400">
+              {$lessons.filter(
+                (lesson) => lesson.course === course.id && lesson.duration,
+              ).length > 0
+                ? "(" +
+                  sumTime(
+                    $lessons
+                      .filter(
+                        (lesson) =>
+                          lesson.course === course.id && lesson.duration,
+                      )
+                      .map((x) => {
+                        return x.duration;
+                      }),
+                  ) +
+                  ")"
+                : ""}
+            </p>
             {#if course.description}
               <h3 class="leading-relaxed text-white/50">
                 {course.description}
@@ -310,6 +367,11 @@
                       class="flex-shrink-0 text-3xl text-main"
                       icon="ph:video"
                     />
+                    {#if lesson.duration}
+                      <p class="text-xs text-slate-400">
+                        ({sumTime([lesson.duration])})
+                      </p>
+                    {/if}
                   {:else if lesson.content}
                     <Icon
                       class="flex-shrink-0 text-3xl text-main"
