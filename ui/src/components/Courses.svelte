@@ -296,7 +296,7 @@
                       </button>
                     {/if}
                   {/each}
-                  {#if progressRecord.status === "Completed" || progressRecord.status === "In Progress"}
+                  {#if progressRecord.status === "In Progress"}
                     <button
                       on:click|stopPropagation
                       on:click={() => resetProgress(course.id)}

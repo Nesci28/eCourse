@@ -7,18 +7,54 @@
   import Icon from "@iconify/svelte";
   import { scrollToCourse } from "../lib/scroll";
   import { isSidebarVisible, isSearchVisible, isLoading } from "../lib/store";
-  import { pb, courses, resources, currentUser } from "../lib/pocketbase";
+  import {
+    pb,
+    courses,
+    resources,
+    currentUser,
+    lessons,
+    course_progressions,
+    progress,
+  } from "../lib/pocketbase";
   import { navigate, useLocation } from "svelte-routing";
   import { t } from "../lib/i18n";
   import { SafeArea } from "capacitor-plugin-safe-area";
 
   export let isCoursesVisible = true;
+  export let isLessonsVisible = true;
+  export let currentLessonId = undefined;
+
+  let courseId = undefined;
+  let courseProgressionId = undefined;
+  let lessonIndex = undefined;
+  let progression = undefined;
 
   const { name, logo, logo_size } = customize;
   const { theme } = resolveConfig(tailwindConfig);
   const mainColor = theme.colors.main.slice(1);
   const location = useLocation();
 
+  $: if (true) {
+    const lesson = $lessons.find((x) => x.id === currentLessonId);
+    courseId = lesson ? lesson.course : undefined;
+    if (courseId) {
+      const courseProgression = $course_progressions.find((x) => {
+        return x.course === courseId;
+      });
+      courseProgressionId = courseProgression
+        ? courseProgression.title
+        : undefined;
+      lessonIndex = $lessons
+        .filter((x) => {
+          return x.course === courseId;
+        })
+        .findIndex((x) => x.id === courseProgressionId);
+      const currentProgression = $progress.find((x) => {
+        return x.course === courseId;
+      });
+      progression = currentProgression;
+    }
+  }
   $: if ($location.pathname && window.innerWidth <= 1024) {
     isSidebarVisible.set(false);
   }
@@ -38,6 +74,10 @@
   function logout() {
     pb.authStore.clear();
     navigate("/login");
+  }
+
+  function handleRouteToLesson(lessonId) {
+    navigate(`/${lessonId}`);
   }
 </script>
 
@@ -94,7 +134,7 @@
     </button>
 
     <div class="hide-scrollbar flex flex-grow flex-col gap-5 overflow-y-scroll">
-      {#if $isLoading && isCoursesVisible && window.innerWidth >= 1024}
+      {#if $isLoading && (isCoursesVisible || isLessonsVisible) && window.innetWidth >= 1024}
         <div class="w-full space-y-3">
           <div
             class="w-1/3 animate-pulse rounded-full bg-white/10 p-1 lg:w-1/2 lg:max-w-28"
@@ -108,6 +148,39 @@
           <div
             class="w-1/2 animate-pulse rounded-full bg-white/10 p-1 lg:w-full lg:max-w-44"
           ></div>
+        </div>
+      {:else if isLessonsVisible && $courses.length > 0}
+        <div class="flex flex-col gap-2 lg:hidden">
+          <h3
+            class="flex items-center gap-2 text-xs tracking-[2px] text-white/50"
+          >
+            <Icon class="flex-shrink-0 text-base" icon="ph:graduation-cap" />
+            {$t("LESSONS")}
+          </h3>
+          <div>
+            {#if courseId}
+              {#each $lessons.filter((x) => x.course === courseId) as lesson, i (lesson.id)}
+                <button
+                  aria-hidden="true"
+                  on:click={() => handleRouteToLesson(lesson.id)}
+                  class="{lessonIndex > i || progression.status === 'Completed'
+                    ? 'text-emerald-600 hover:bg-emerald-600/10 hover:text-emerald-300'
+                    : lesson.id === currentLessonId
+                      ? 'text-amber-600 hover:bg-amber-600/10 hover:text-amber-300'
+                      : 'text-white/50 hover:bg-white/10 hover:text-white'}
+                    line-clamp-1 flex w-full gap-3 truncate rounded-md bg-transparent p-2 text-start transition"
+                >
+                  {#if lesson.id === courseProgressionId && progression.status !== "Completed"}
+                    <Icon
+                      class="flex-shrink-0 text-base"
+                      icon="ph:graduation-cap"
+                    />
+                  {/if}
+                  {lesson.title.replace(/_/g, " ")}
+                </button>
+              {/each}
+            {/if}
+          </div>
         </div>
       {:else if isCoursesVisible && $courses.length > 0}
         <div class="flex flex-col gap-2 lg:hidden">

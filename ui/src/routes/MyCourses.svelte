@@ -27,10 +27,13 @@
 
 {#if $currentUser}
   <main class="flex justify-between lg:overflow-x-hidden">
-    <Sidebar />
+    <Sidebar
+      isCoursesVisible={true}
+      isLessonsVisible={false}
+      currentLessonId={undefined}
+    />
     {#if platform === "web" || (!$isSidebarVisible && platform !== "web")}
       <Courses />
     {/if}
-
   </main>
 {/if}

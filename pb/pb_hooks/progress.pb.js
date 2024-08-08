@@ -176,8 +176,6 @@ onRecordAfterUpdateRequest((e) => {
       const record = new Record(collection);
       const form = new RecordUpsertForm($app, record);
 
-      console.log(courseId, assigneeId);
-
       form.loadData({
         course: courseId,
         assignee: assigneeId,

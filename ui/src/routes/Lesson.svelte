@@ -40,6 +40,7 @@
   let lessonVideo;
   let currentCourseStatus = "";
   let currentLessonTitle = "";
+  let currentActiveLesson;
   let platform = "";
 
   const lessonLocation = useLocation();
@@ -83,6 +84,7 @@
         slugify(lesson.id, { lower: true, strict: true }) ===
         slugify(lessonId, { lower: true, strict: true }),
     );
+    currentActiveLesson = currentLesson;
     if (currentLesson) {
       currentLessonTitle = currentLesson.title;
       const currentCourse = $courses.find(
@@ -235,11 +237,15 @@
   }
 </script>
 
-<Title title={currentLessonTitle} />
+<Title title={currentLessonTitle.replace(/_/g, " ")} />
 
 {#if $currentUser}
   <main class="flex justify-between lg:overflow-x-hidden">
-    <Sidebar isCoursesVisible={false} />
+    <Sidebar
+      isCoursesVisible={false}
+      isLessonsVisible={true}
+      currentLessonId={currentActiveLesson ? currentActiveLesson.id : undefined}
+    />
 
     {#if platform === "web" || (!$isSidebarVisible && platform !== "web")}
       {#if $isLoading}
@@ -303,7 +309,7 @@
                       />
                     </button>
                     <h1 class="text-balance text-xl lg:text-lg">
-                      {lesson.title}
+                      {lesson.title.replace(/_/g, " ")}
                     </h1>
                   </div>
 
