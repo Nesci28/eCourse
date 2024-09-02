@@ -24,29 +24,34 @@
   let loading = {};
   let openCourseId = "";
   let enableReactivity = true;
-  let state = "NotStarted";
+  let state = "Not Started";
+  let filteredCourses = [];
 
   // only courses that match a progress record with "In Progress" status are set to open
-  $: if (enableReactivity) {
-    $progress.forEach((progressRecord) => {
-      if (progressRecord.status === "In Progress") {
-        isOpen[progressRecord.course] = true;
-      }
-    });
+  // $: if (enableReactivity) {
+  //   $progress.forEach((progressRecord) => {
+  //     if (progressRecord.status === "In Progress") {
+  //       isOpen[progressRecord.course] = true;
+  //     }
+  //   });
+  // }
+
+  $: if ($courses.length > 0) {
+    toggleCourseState(state);
   }
 
   // scroll into view of open courses
-  $: {
-    (async () => {
-      await tick();
-      if (isOpen[openCourseId]) {
-        const courseElement = document.getElementById(openCourseId);
-        if (courseElement) {
-          courseElement.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-    })();
-  }
+  // $: {
+  //   (async () => {
+  //     await tick();
+  //     if (isOpen[openCourseId]) {
+  //       const courseElement = document.getElementById(openCourseId);
+  //       if (courseElement) {
+  //         courseElement.scrollIntoView({ behavior: "smooth" });
+  //       }
+  //     }
+  //   })();
+  // }
 
   // function to toggle opening & closing a course
   const toggleCourse = (courseId) => {
@@ -55,9 +60,20 @@
   };
 
   const toggleCourseState = (s) => {
-    console.log("s :>>> ", s);
     state = s;
-    console.log("state :>>> ", state);
+    const filteredCourseIds = $progress
+      .filter((x) => {
+        return x.status === s;
+      })
+      .map((x) => {
+        return x.course;
+      });
+
+    filteredCourses = $courses.filter((x) => {
+      return filteredCourseIds.some((y) => {
+        return x.id === y;
+      });
+    });
   };
 
   // function to navigate to the first lesson of a course and update the status to "In Progress"
@@ -247,24 +263,24 @@
   {:else}
     <div class="flex w-full items-center justify-start gap-5">
       <button
-        class={state === "NotStarted"
-          ? "rounded-full px-2 py-1 outline outline-1 outline-offset-1 outline-white"
+        class={state === "Not Started"
+          ? "rounded-full px-2 py-1 outline outline-1 outline-offset-1 outline-white/50"
           : "rounded-full px-2 py-1"}
-        on:click={() => toggleCourseState("NotStarted")}
+        on:click={() => toggleCourseState("Not Started")}
       >
         {$t("notStarted")}
       </button>
       <button
-        class={state === "InProgress"
-          ? "rounded-full px-2 py-1 outline outline-1 outline-offset-1 outline-white"
+        class={state === "In Progress"
+          ? "rounded-full px-2 py-1 outline outline-1 outline-offset-1 outline-white/50"
           : "rounded-full px-2 py-1"}
-        on:click={() => toggleCourseState("InProgress")}
+        on:click={() => toggleCourseState("In Progress")}
       >
         {$t("inProgress")}
       </button>
       <button
         class={state === "Completed"
-          ? "rounded-full px-2 py-1 outline outline-1 outline-offset-1 outline-white"
+          ? "rounded-full px-2 py-1 outline outline-1 outline-offset-1 outline-white/50"
           : "rounded-full px-2 py-1"}
         on:click={() => toggleCourseState("Completed")}
       >
@@ -272,170 +288,164 @@
       </button>
     </div>
 
-    {#each $courses as course (course.id)}
-      {#each $progress as progressRecord (progressRecord.id)}
-        {#if progressRecord.status === state}
+    {#each filteredCourses as course (course.id)}
+      <div
+        id={course.id}
+        class={isOpen[course.id]
+          ? "w-full rounded-md outline outline-[1.5px] outline-white/20 transition-all hover:outline-white/20"
+          : "w-full rounded-md outline outline-[1.5px] outline-white/10 transition-all hover:outline-white/20"}
+      >
+        <div
+          aria-hidden="true"
+          on:click={() => toggleCourse(course.id)}
+          class={isOpen[course.id]
+            ? "w-full cursor-pointer space-y-5 rounded-b-none rounded-t-md bg-white/5 p-5"
+            : "w-full cursor-pointer space-y-5 rounded-md bg-white/5 p-5"}
+        >
           <div
-            id={course.id}
-            class={isOpen[course.id]
-              ? "w-full rounded-md outline outline-[1.5px] outline-white/20 transition-all hover:outline-white/20"
-              : "w-full rounded-md outline outline-[1.5px] outline-white/10 transition-all hover:outline-white/20"}
+            class="flex w-full items-center justify-between gap-5 sm:flex-col"
           >
             <div
-              aria-hidden="true"
-              on:click={() => toggleCourse(course.id)}
-              class={isOpen[course.id]
-                ? "w-full cursor-pointer space-y-5 rounded-b-none rounded-t-md bg-white/5 p-5"
-                : "w-full cursor-pointer space-y-5 rounded-md bg-white/5 p-5"}
+              class="flex items-center gap-3 sm:w-full xs:flex-col xs:items-start"
             >
-              {#if course.id === progressRecord.course}
-                <div
-                  class="flex w-full items-center justify-between gap-5 sm:flex-col"
-                >
-                  <div
-                    class="flex items-center gap-3 sm:w-full xs:flex-col xs:items-start"
-                  >
-                    <h3
-                      class={progressRecord.status === "Completed"
-                        ? "rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-400/70"
-                        : progressRecord.status === "In Progress"
-                          ? "rounded-full bg-amber-400/10 px-3 py-1 text-amber-400/70"
-                          : "rounded-full bg-white/10 px-3 py-1 text-white/70"}
-                    >
-                      {progressRecord.status === "Completed"
-                        ? $t("completed")
-                        : progressRecord.status === "In Progress"
-                          ? $t("inProgress")
-                          : $t("notStarted")}
-                    </h3>
-                    <h3 class="flex items-center gap-2 text-white/50">
-                      <Icon class="flex-shrink-0 text-lg" icon="ph:book-open" />
-                      {$lessons.filter((lesson) => lesson.course === course.id)
-                        .length}
-                      {$lessons.filter((lesson) => lesson.course === course.id)
-                        .length === 1
-                        ? $t("lessonInThisCourse")
-                        : $t("lessonsInThisCourse")}
-                    </h3>
-                  </div>
-                  <div class="flex items-center gap-3 sm:w-full">
-                    {#each $course_certificates as courseCertificates (courseCertificates.id)}
-                      {#if courseCertificates.course === course.id && courseCertificates.certificate}
-                        <button
-                          on:click|stopPropagation
-                          on:click={() => handleShowCertificate(course.id)}
-                          class={loading[course.id]
-                            ? "pointer-events-none line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md px-4 py-2 text-red-400 opacity-50 outline outline-[1.5px] outline-red-400/20 transition hover:bg-red-400/20 sm:w-full sm:flex-1 sm:px-0"
-                            : "line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md bg-emerald-400/10 px-4 py-2 text-emerald-400/70 outline outline-[1.5px] outline-emerald-400/20 transition hover:bg-emerald-400/20 sm:w-full sm:flex-1 sm:px-0"}
-                          >{$t("showCertificate")}
-                        </button>
-                      {/if}
-                    {/each}
-                    {#if progressRecord.status === "In Progress"}
-                      <button
-                        on:click|stopPropagation
-                        on:click={() => resetProgress(course.id)}
-                        class={loading[course.id]
-                          ? "pointer-events-none line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md px-4 py-2 text-red-400 opacity-50 outline outline-[1.5px] outline-red-400/20 transition hover:bg-red-400/20 sm:w-full sm:flex-1 sm:px-0"
-                          : "line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md px-4 py-2 text-red-400 outline outline-[1.5px] outline-red-400/20 transition hover:bg-red-400/20 sm:w-full sm:flex-1 sm:px-0"}
-                        >{$t("resetProgress")}
-                        {#if loading[course.id]}
-                          <Icon
-                            class="flex-shrink-0 animate-spin text-base"
-                            icon="fluent:spinner-ios-16-regular"
-                          />
-                        {/if}
-                      </button>
-                    {/if}
-                    <button
-                      on:click|stopPropagation
-                      on:click={() => goToFirstLessonOfCourse(course.id)}
-                      class="line-clamp-1 truncate rounded-md bg-white/10 px-4 py-2 outline outline-[1.5px] outline-white/20 transition hover:bg-white/20 sm:w-full sm:flex-1 sm:px-0"
-                      >{progressRecord.status === "Completed"
-                        ? $t("openCourse")
-                        : progressRecord.status === "In Progress"
-                          ? $t("continueCourse")
-                          : $t("startCourse")}</button
-                    >
-                  </div>
-                </div>
-              {/if}
-
-              <div class="w-full space-y-2">
-                <h1 class="text-base leading-relaxed">
-                  {course.title}
-                </h1>
-                <p class="text-sm text-slate-400">
-                  {$lessons.filter(
-                    (lesson) => lesson.course === course.id && lesson.duration,
-                  ).length > 0
-                    ? "(" +
-                      sumTime(
-                        $lessons
-                          .filter(
-                            (lesson) =>
-                              lesson.course === course.id && lesson.duration,
-                          )
-                          .map((x) => {
-                            return x.duration;
-                          }),
-                      ) +
-                      ")"
-                    : ""}
-                </p>
-                {#if course.description}
-                  <h3 class="leading-relaxed text-white/50">
-                    {course.description}
-                  </h3>
-                {/if}
-              </div>
+              <h3
+                class={state === "Completed"
+                  ? "rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-400/70"
+                  : state === "In Progress"
+                    ? "rounded-full bg-amber-400/10 px-3 py-1 text-amber-400/70"
+                    : "rounded-full bg-white/10 px-3 py-1 text-white/70"}
+              >
+                {state === "Completed"
+                  ? $t("completed")
+                  : state === "In Progress"
+                    ? $t("inProgress")
+                    : $t("notStarted")}
+              </h3>
+              <h3 class="flex items-center gap-2 text-white/50">
+                <Icon class="flex-shrink-0 text-lg" icon="ph:book-open" />
+                {$lessons.filter((lesson) => lesson.course === course.id)
+                  .length}
+                {$lessons.filter((lesson) => lesson.course === course.id)
+                  .length === 1
+                  ? $t("lessonInThisCourse")
+                  : $t("lessonsInThisCourse")}
+              </h3>
             </div>
-            {#each $lessons as lesson (lesson.id)}
-              {#if course.id === lesson.course}
-                {#if isOpen[course.id]}
-                  <div
-                    class="flex w-full items-center justify-between gap-5 border-t-[1.5px] border-t-white/10 p-5"
-                  >
-                    <div class="flex items-center gap-3">
-                      {#if lesson.video}
-                        <Icon
-                          class="flex-shrink-0 text-3xl text-main"
-                          icon="ph:video"
-                        />
-                        {#if lesson.duration}
-                          <p class="text-xs text-slate-400">
-                            ({sumTime([lesson.duration])})
-                          </p>
-                        {/if}
-                      {:else if lesson.content}
-                        <Icon
-                          class="flex-shrink-0 text-3xl text-main"
-                          icon="ph:text-align-left"
-                        />
-                      {/if}
-                      <h3
-                        class="line-clamp-1 truncate text-wrap break-all text-base"
-                      >
-                        {lesson.title}
-                      </h3>
-                    </div>
-                    <button
-                      on:click={() =>
-                        navigate(
-                          `/${slugify(lesson.id, { lower: true, strict: true })}`,
-                        )}
-                      class="flex items-center gap-2 p-2 text-white/50 transition hover:text-white"
-                    >
-                      <Icon class="flex-shrink-0 text-lg" icon="ph:eye" />
-                      {$t("view")}</button
-                    >
-                  </div>
+            <div class="flex items-center gap-3 sm:w-full">
+              {#each $course_certificates as courseCertificates (courseCertificates.id)}
+                {#if courseCertificates.course === course.id && courseCertificates.certificate}
+                  <button
+                    on:click|stopPropagation
+                    on:click={() => handleShowCertificate(course.id)}
+                    class={loading[course.id]
+                      ? "pointer-events-none line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md px-4 py-2 text-red-400 opacity-50 outline outline-[1.5px] outline-red-400/20 transition hover:bg-red-400/20 sm:w-full sm:flex-1 sm:px-0"
+                      : "line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md bg-emerald-400/10 px-4 py-2 text-emerald-400/70 outline outline-[1.5px] outline-emerald-400/20 transition hover:bg-emerald-400/20 sm:w-full sm:flex-1 sm:px-0"}
+                    >{$t("showCertificate")}
+                  </button>
                 {/if}
+              {/each}
+              {#if state === "In Progress"}
+                <button
+                  on:click|stopPropagation
+                  on:click={() => resetProgress(course.id)}
+                  class={loading[course.id]
+                    ? "pointer-events-none line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md px-4 py-2 text-red-400 opacity-50 outline outline-[1.5px] outline-red-400/20 transition hover:bg-red-400/20 sm:w-full sm:flex-1 sm:px-0"
+                    : "line-clamp-1 flex items-center justify-center gap-2 truncate rounded-md px-4 py-2 text-red-400 outline outline-[1.5px] outline-red-400/20 transition hover:bg-red-400/20 sm:w-full sm:flex-1 sm:px-0"}
+                  >{$t("resetProgress")}
+                  {#if loading[course.id]}
+                    <Icon
+                      class="flex-shrink-0 animate-spin text-base"
+                      icon="fluent:spinner-ios-16-regular"
+                    />
+                  {/if}
+                </button>
               {/if}
-            {/each}
+              <button
+                on:click|stopPropagation
+                on:click={() => goToFirstLessonOfCourse(course.id)}
+                class="line-clamp-1 truncate rounded-md bg-white/10 px-4 py-2 outline outline-[1.5px] outline-white/20 transition hover:bg-white/20 sm:w-full sm:flex-1 sm:px-0"
+                >{state === "Completed"
+                  ? $t("openCourse")
+                  : state === "In Progress"
+                    ? $t("continueCourse")
+                    : $t("startCourse")}</button
+              >
+            </div>
           </div>
-        {/if}
-      {/each}
+
+          <div class="w-full space-y-2">
+            <h1 class="text-base leading-relaxed">
+              {course.title}
+            </h1>
+            <p class="text-sm text-slate-400">
+              {$lessons.filter(
+                (lesson) => lesson.course === course.id && lesson.duration,
+              ).length > 0
+                ? "(" +
+                  sumTime(
+                    $lessons
+                      .filter(
+                        (lesson) =>
+                          lesson.course === course.id && lesson.duration,
+                      )
+                      .map((x) => {
+                        return x.duration;
+                      }),
+                  ) +
+                  ")"
+                : ""}
+            </p>
+            {#if course.description}
+              <h3 class="leading-relaxed text-white/50">
+                {course.description}
+              </h3>
+            {/if}
+          </div>
+        </div>
+        {#each $lessons as lesson (lesson.id)}
+          {#if course.id === lesson.course}
+            {#if isOpen[course.id]}
+              <div
+                class="flex w-full items-center justify-between gap-5 border-t-[1.5px] border-t-white/10 p-5"
+              >
+                <div class="flex items-center gap-3">
+                  {#if lesson.video}
+                    <Icon
+                      class="flex-shrink-0 text-3xl text-main"
+                      icon="ph:video"
+                    />
+                    {#if lesson.duration}
+                      <p class="text-xs text-slate-400">
+                        ({sumTime([lesson.duration])})
+                      </p>
+                    {/if}
+                  {:else if lesson.content}
+                    <Icon
+                      class="flex-shrink-0 text-3xl text-main"
+                      icon="ph:text-align-left"
+                    />
+                  {/if}
+                  <h3
+                    class="line-clamp-1 truncate text-wrap break-all text-base"
+                  >
+                    {lesson.title}
+                  </h3>
+                </div>
+                <button
+                  on:click={() =>
+                    navigate(
+                      `/${slugify(lesson.id, { lower: true, strict: true })}`,
+                    )}
+                  class="flex items-center gap-2 p-2 text-white/50 transition hover:text-white"
+                >
+                  <Icon class="flex-shrink-0 text-lg" icon="ph:eye" />
+                  {$t("view")}</button
+                >
+              </div>
+            {/if}
+          {/if}
+        {/each}
+      </div>
     {/each}
   {/if}
 </section>
