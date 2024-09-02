@@ -11,6 +11,10 @@ app.use(bodyParser.json());
 app.get("/generate-certificate/", async (req, res) => {
   const { fullName, courseName, completionAt } = req.query;
 
+  console.log("fullName :>>> ", fullName);
+  console.log("courseName :>>> ", courseName);
+  console.log("completionAt :>>> ", completionAt);
+
   if (!fullName || !courseName || !completionAt) {
     return res.status(400).send("Missing required fields");
   }

@@ -162,69 +162,76 @@ onRecordAfterUpdateRequest((e) => {
             "assignee = {:assigneeId} && course = {:courseId}",
             { assigneeId, courseId },
           );
-      } catch (_) {}
-      const hasFile = courseCertificateRecord
-        ? courseCertificateRecord.getString("certificate")
-        : undefined;
-      if (hasFile) {
-        return;
+      } catch (_err) {}
+
+      try {
+        const hasFile = courseCertificateRecord
+          ? courseCertificateRecord.getString("certificate")
+          : undefined;
+
+        if (hasFile) {
+          return;
+        }
+
+        const collection = $app
+          .dao()
+          .findCollectionByNameOrId("course_certificates");
+
+        const record = new Record(collection);
+        const form = new RecordUpsertForm($app, record);
+
+        form.loadData({
+          course: courseId,
+          assignee: assigneeId,
+        });
+
+        const completionAt = new Date().toISOString();
+        const url = `${pdfApiUrl}?fullName=${encodeURIComponent(fullName)}&courseName=${encodeURIComponent(courseName)}&completionAt=${encodeURIComponent(completionAt)}`;
+
+        const pdfFile = $filesystem.fileFromUrl(url);
+
+        const v4 = () => {
+          // Public Domain/MIT
+          var d = new Date().getTime(); //Timestamp
+          var d2 =
+            (typeof performance !== "undefined" &&
+              performance.now &&
+              performance.now() * 1000) ||
+            0; //Time in microseconds since page-load or 0 if unsupported
+          return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+            /[xy]/g,
+            function (c) {
+              var r = Math.random() * 16; //random number between 0 and 16
+              if (d > 0) {
+                //Use timestamp until depleted
+                r = (d + r) % 16 | 0;
+                d = Math.floor(d / 16);
+              } else {
+                //Use microseconds since page-load if supported
+                r = (d2 + r) % 16 | 0;
+                d2 = Math.floor(d2 / 16);
+              }
+              return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+            },
+          );
+        };
+
+        const formattedDate = new Date(completionAt)
+          .toLocaleDateString()
+          .padStart(10, "0");
+        const name =
+          `${v4()}_certificate_${fullName}_${courseName}_${formattedDate}.pdf`
+            .replace(/ /g, "_")
+            .replace(/\//g, "-");
+        pdfFile.name = name;
+        form.addFiles("certificate", pdfFile);
+
+        form.submit();
+      } catch (err) {
+        console.log("err 1 :>>> ", err);
       }
-
-      const collection = $app
-        .dao()
-        .findCollectionByNameOrId("course_certificates");
-      const record = new Record(collection);
-      const form = new RecordUpsertForm($app, record);
-
-      form.loadData({
-        course: courseId,
-        assignee: assigneeId,
-      });
-
-      const completionAt = new Date().toISOString();
-      const pdfFile = $filesystem.fileFromUrl(
-        `${pdfApiUrl}?fullName=${fullName}&courseName=${courseName}&completionAt=${completionAt}`,
-      );
-
-      const v4 = () => {
-        // Public Domain/MIT
-        var d = new Date().getTime(); //Timestamp
-        var d2 =
-          (typeof performance !== "undefined" &&
-            performance.now &&
-            performance.now() * 1000) ||
-          0; //Time in microseconds since page-load or 0 if unsupported
-        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-          /[xy]/g,
-          function (c) {
-            var r = Math.random() * 16; //random number between 0 and 16
-            if (d > 0) {
-              //Use timestamp until depleted
-              r = (d + r) % 16 | 0;
-              d = Math.floor(d / 16);
-            } else {
-              //Use microseconds since page-load if supported
-              r = (d2 + r) % 16 | 0;
-              d2 = Math.floor(d2 / 16);
-            }
-            return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-          },
-        );
-      };
-
-      const formattedDate = new Date(completionAt)
-        .toLocaleDateString()
-        .padStart(10, "0");
-      const name =
-        `${v4()}_certificate_${fullName}_${courseName}_${formattedDate}.pdf`
-          .replace(/ /g, "_")
-          .replace(/\//g, "-");
-      pdfFile.name = name;
-      form.addFiles("certificate", pdfFile);
-
-      form.submit();
     } catch (err) {
-      console.log(err);
+      console.log("err 2 :>>> ", err);
     }
   }
 }, "progress");
